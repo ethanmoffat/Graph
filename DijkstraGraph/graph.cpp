@@ -180,7 +180,7 @@ void Graph::RemoveEdge(int vertexA, int vertexB)
 		adjList[vertexB][vertexA] = 0;
 }
 
-void Graph::BFS(const int startVert, const std::function<int(int)> &visit) const
+void Graph::BFS(const int startVert, const std::function<void(int)> &visit) const
 { //BFS traversal algorithm as described in slides
 	if (startVert < 0 || startVert >= size || size == 0 || edgeCount == 0)
 		return;
@@ -210,7 +210,7 @@ void Graph::BFS(const int startVert, const std::function<int(int)> &visit) const
 	delete[] visited;
 }
 
-void Graph::dfsHelper(const int startVert, bool * const visited, const std::function<int(int)> &visit) const
+void Graph::dfsHelper(const int startVert, bool * const visited, const std::function<void(int)> &visit) const
 {
 	visited[startVert] = true;
 	visit(startVert);
@@ -222,7 +222,7 @@ void Graph::dfsHelper(const int startVert, bool * const visited, const std::func
 	}
 }
 
-void Graph::DFS(const int startVert, const std::function<int(int)> &visit) const
+void Graph::DFS(const int startVert, const std::function<void(int)> &visit) const
 { //DFS traversal implemented as discussed in class
 	if (startVert < 0 || startVert >= size || size == 0 || edgeCount == 0)
 		return;
@@ -233,7 +233,7 @@ void Graph::DFS(const int startVert, const std::function<int(int)> &visit) const
 	delete[] visited;
 }
 
-void Graph::Dijkstra(const int startVert, const std::function<int(int, int, std::list<int>)> &visit) const
+void Graph::Dijkstra(const int startVert, const std::function<void(int, int, std::list<int>)> &visit) const
 {
 	if (startVert < 0 || startVert >= size || size == 0 || edgeCount == 0)
 		return;
@@ -290,13 +290,12 @@ void Graph::Dijkstra(const int startVert, const std::function<int(int, int, std:
 
 void Graph::GetShortestPathTree(const int startVert, Graph &retGraph) const
 {
-	retGraph = Graph(*this); //copy from this object
-	retGraph.RemoveAllEdges(); //removes all edges
+	retGraph = Graph(this->size, this->directed); //copy from this object
 
 	//use the dijkstra algorithm method to create a tree based on the paths contained in each visited vertex
 	this->Dijkstra(startVert, 
-		//lambda format: [&] means local variables accessible by reference, '-> int' means return an int
-		[&](int vert, int dist, std::list<int> path) -> int
+		//lambda format: [&] means local variables accessible by reference
+		[&](int vert, int dist, std::list<int> path)
 		{
 			std::list<int>::iterator iter = path.begin();
 			while (iter != path.end())
@@ -308,7 +307,6 @@ void Graph::GetShortestPathTree(const int startVert, Graph &retGraph) const
 				retGraph.AddEdge(prev, *iter, adjList[prev][*iter]); //edge between the two vertices in the path
 				//the weight of the new edge is stored conveniently in the adjList of this object
 			}
-			return 0;
 		}
 	);
 }
@@ -383,6 +381,14 @@ std::ostream& operator<<(std::ostream &str, const Graph &g)
 		str << " ]" << std::endl;
 	}
 	return str;
+}
+
+const int * const Graph::operator[](int vertex) const
+{
+	if (vertex < 0 || vertex >= size)
+		return NULL;
+
+	return adjList[vertex];
 }
 
 bool Graph::IsBipartite() const

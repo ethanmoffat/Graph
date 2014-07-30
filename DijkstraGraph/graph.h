@@ -14,10 +14,6 @@
 #include <stack>
 #include <list>
 
-//TODO: add template parameters to specify types of vertices and edges
-//This would require probably some internal structs that map ints to VertType/EdgeType
-//I would also have to move the code from graph.cpp back over here since its a template...
-//template<typename VertType, typename EdgeType>
 class Graph
 {
 public:
@@ -64,14 +60,14 @@ public:
 	//The visit function is called on the vertex when the vertex is visited by the algorithm
 
 	//performs Breadth-first traversal (queue) on vertices
-	void BFS(const int startVert, const std::function<int(int)> &visit = [](int){ return 0; }) const;
+	void BFS(const int startVert, const std::function<void(int)> &visit = [](int){}) const;
 	//performs Depth-first traversal (stack) on vertices
-	void DFS(const int startVert, const std::function<int(int)> &visit = [](int){ return 0; }) const;
+	void DFS(const int startVert, const std::function<void(int)> &visit = [](int){}) const;
 
 	//Calculates Dijkstra's shortest-path-first algorithm from a starting vertex
 	//parameters for Dijkstra visit function are as follows: VertexNumber, DistancefromStart, list PathToVertex
 	void Dijkstra(const int startVert, 
-		const std::function<int(int, int, std::list<int>)> &visit = [](int, int, std::list<int>){ return 0; }) const;
+		const std::function<void(int, int, std::list<int>)> &visit = [](int, int, std::list<int>){}) const;
 	//uses Dijkstra method to return a new graph containing a shortest path tree (returns as parameter)
 	void GetShortestPathTree(const int startVert, Graph &retGraph) const;
 	//Uses Prim's algorithm to find and return the minimum spanning tree graph. Returns by reference.
@@ -80,8 +76,8 @@ public:
 	/* -- OTHER OPERATORS -- */
 	//the << operator overload does a lot of fancy stuff formatting wise
 	friend std::ostream& operator<<(std::ostream &str, const Graph &g);
-	//TODO: friend std::istream& operator>>(std::istream &str, const Graph &g)
-	//TODO: int * operator[](int vertex)
+	//this is how the user can interface directly with graph data
+	const int * const operator[](int vertex) const;
 
 	/* -- ACCESSOR METHODS -- */
 	//First three simply access a data member
@@ -96,7 +92,7 @@ private:
 	bool directed; //flag for whether or not the graph is directed; important only when AddEdge/RemoveEdge are called
 
 	//helper function for the dfs traversal: recursively called
-	void dfsHelper(const int startVert, bool * const visited, const std::function<int(int)> &visit) const;
+	void dfsHelper(const int startVert, bool * const visited, const std::function<void(int)> &visit) const;
 };
 
 //definition of static factory function

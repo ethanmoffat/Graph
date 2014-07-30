@@ -71,7 +71,19 @@ void CreateMSTTest(Graph &g) //making an adjacency matrix for this would have be
 	g.AddEdge(9,10,8);
 }
 
+void TestFromArray();
+void TestMST();
+void TestStupidCast();
+
 int main(int c, char * argv[])
+{
+	TestFromArray();
+	TestMST();
+	TestStupidCast();
+	return 0;
+}
+
+void TestFromArray()
 {
 	Graph * g = NULL;
 	g = Graph::CreateFromArray<GRAPH_SIZE>(graphData);
@@ -81,32 +93,63 @@ int main(int c, char * argv[])
 		cout << "Running Dijkstra's algorithm starting from: " << i << endl;
 		cout << left << setw(8) << "Vertex" << setw(10) << "Distance" << "Path" << endl;
 		g->Dijkstra(i, [](int vert, int dist, list<int> pathInfo) //lambda expression for visit function
-						{
-							cout << setw(8) << left << vert << setw(10) << dist; //vertex/distance
-							list<int>::iterator iter = pathInfo.begin();
-							while (iter != pathInfo.end()) //iterate over the path list and print the values
-							{
-								cout << *iter;
-								if (++iter != pathInfo.end())
-									cout << "-->"; //separate with the arrow
-							}
-							cout << endl; //endline after the visit function is done
-							return 0;
-						});
+		{
+			cout << setw(8) << left << vert << setw(10) << dist; //vertex/distance
+			list<int>::iterator iter = pathInfo.begin();
+			while (iter != pathInfo.end()) //iterate over the path list and print the values
+			{
+				cout << *iter;
+				if (++iter != pathInfo.end())
+					cout << "-->"; //separate with the arrow
+			}
+			cout << endl; //endline after the visit function is done
+		});
 
 		cout << endl << endl; //spacing between calls to g->Dijkstra
 	}
 
 	delete g; //the factory function CreateFromArray dynamically allocates memory.
+}
 
+void TestMST()
+{
 	//The following is a demo of the MST algorithm
-	//Graph mstStart(11), mst;
-	//CreateMSTTest(mstStart);
-	//mstStart.GetMinimumSpanningTree(mst);
-	//cout << endl;
-	//cout << "starting graph " << (mstStart.IsBipartite() ? "is" : "is not") << " bipartite." << endl;
-	//cout << "MST      graph " << (mst.IsBipartite() ? "is" : "is not") << " bipartite." << endl;
-	//cout << "Edge count: " << mst.NumEdges() << " | Vertex count: " << mst.NumVerts() << endl;
-	//cout << mst;
-	return 0;
+	
+	Graph mstStart(11), mst;
+	CreateMSTTest(mstStart);
+	mstStart.GetMinimumSpanningTree(mst);
+	cout << endl;
+	cout << "starting graph " << (mstStart.IsBipartite() ? "is" : "is not") << " bipartite." << endl;
+	cout << "MST      graph " << (mst.IsBipartite() ? "is" : "is not") << " bipartite." << endl;
+	cout << "Edge count: " << mst.NumEdges() << " | Vertex count: " << mst.NumVerts() << endl;
+	cout << mst;
+}
+
+void TestStupidCast()
+{
+	const char * const str1 = "Edge One";
+	const char * const str2 = "Edge Two";
+	const char * const str3 = "Edge Three";
+	const char * const str4 = "Edge Four";
+
+	Graph g(5, false);
+
+	g.AddEdge(0, 1, reinterpret_cast<int>(str1));
+	g.AddEdge(1, 2, reinterpret_cast<int>(str2));
+	g.AddEdge(2, 3, reinterpret_cast<int>(str3));
+	g.AddEdge(3, 4, reinterpret_cast<int>(str4));
+
+	cout << "Trying to get edges back from graph..." << endl;
+	for (int i = 0; i < g.NumVerts(); ++i)
+	{
+		const int * const vert = g[i];
+		if (vert == NULL)
+			continue;
+
+		for (int j = i; j < g.NumVerts(); ++j)
+		{
+			char* edgeLabel = reinterpret_cast<char*>(vert[j]);
+			cout << (edgeLabel ? edgeLabel : "") << (edgeLabel ? "\n" : "");
+		}
+	}
 }
