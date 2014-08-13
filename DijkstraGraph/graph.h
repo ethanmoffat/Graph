@@ -14,6 +14,37 @@
 #include <stack>
 #include <list>
 
+/*
+Considering organization as follows
+	0  1  2
+0 | 0  1  1
+1 | 0  0  0
+2 | 0  1  0
+
+1--2
+| /
+3
+
+So, 2-dim array where each element is type
+struct gEntry
+{
+	int distance;
+	T value;
+};
+
+With associated T * vertVals
+[0]: 5
+[1]: 7
+[2]: 1
+That contains values for the vertices (lookup table)
+
+enhanced:
+	use adjList[1][2]->distance to get the edge distance between vert 1 and vert 2 (instead of adjList[1][2])
+new:
+	use adjList[1][2]->value to get the value of the edge between vert 1 and vert 2 (templated)
+	use vertVals[1] to get the value of vertex 1 (templated)
+*/
+
 class Graph
 {
 public:
@@ -25,7 +56,7 @@ public:
 	template<int vertCount>
 	static Graph* CreateFromArray(const int vertData[vertCount][vertCount]);
 
-	/* -- CONSTRUCTORS/DESTRUCTORS/ASSIGNMENT OPERATORS -- */
+public: /* -- CONSTRUCTORS/DESTRUCTORS/ASSIGNMENT OPERATORS -- */
 	//default constructor: create an empty, undirected graph
 	Graph() : size(0), edgeCount(0), directed(false), adjList(NULL) { }
 	//creates a graph with the specified number of vertices but no edges
@@ -36,7 +67,7 @@ public:
 	Graph& operator=(const Graph &rhs);
 	~Graph(); //clean up memory
 
-	/* -- MODIFIER METHODS -- */
+public: /* -- MODIFIER METHODS -- */
 	//Adds a vertex to the graph (resizes internal array container). Returns the new vertex number.
 	int AddVertex();
 	//removes a vertex (resizes array) and any edges referencing it.
@@ -55,7 +86,7 @@ public:
 		edgeCount = 0;
 	}
 
-	/* -- TRAVERSAL METHODS -- */
+public: /* -- TRAVERSAL METHODS -- */
 	//General parameters for these: specify the starting vertex and a 'visit' function
 	//The visit function is called on the vertex when the vertex is visited by the algorithm
 
@@ -73,7 +104,7 @@ public:
 	//Uses Prim's algorithm to find and return the minimum spanning tree graph. Returns by reference.
 	void GetMinimumSpanningTree(Graph &retGraph) const;
 	
-	/* -- OTHER OPERATORS -- */
+public: /* -- OTHER OPERATORS -- */
 	//the << operator overload does a lot of fancy stuff formatting wise
 	friend std::ostream& operator<<(std::ostream &str, const Graph &g);
 	//this is how the user can interface directly with graph data
@@ -86,6 +117,7 @@ public:
 	inline int NumEdges() const { return this->edgeCount; }
 	//This method uses red-blue coloring to determine if the graph is bipartite
 	bool IsBipartite() const;
+
 private:
 	int **adjList; //adjacency matrix of edges
 	int size, edgeCount; //size is number of vertices, edgeCount is number of edges
