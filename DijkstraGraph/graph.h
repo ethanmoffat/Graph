@@ -14,37 +14,6 @@
 #include <stack>
 #include <list>
 
-/*
-Considering organization as follows
-	0  1  2
-0 | 0  1  1
-1 | 0  0  0
-2 | 0  1  0
-
-1--2
-| /
-3
-
-So, 2-dim array where each element is type
-struct gEntry
-{
-	int distance;
-	T value;
-};
-
-With associated T * vertVals
-[0]: 5
-[1]: 7
-[2]: 1
-That contains values for the vertices (lookup table)
-
-enhanced:
-	use adjList[1][2]->distance to get the edge distance between vert 1 and vert 2 (instead of adjList[1][2])
-new:
-	use adjList[1][2]->value to get the value of the edge between vert 1 and vert 2 (templated)
-	use vertVals[1] to get the value of vertex 1 (templated)
-*/
-
 template<typename T, typename U>
 class Graph
 {
@@ -59,6 +28,10 @@ public:
 	//	technique when creating graphs from adjacency matrices.
 	template<int vertCount>
 	static Graph* CreateFromArray(const int vertData[vertCount][vertCount]);
+
+public: //typedefs for visit functions
+	typedef std::function<void(int, const T&, int, std::list<std::pair<int, T>>)> SPFVisitFunction;
+	typedef std::function<void(int, int)> TraversalFunction;
 
 public: /* -- CONSTRUCTORS/DESTRUCTORS/ASSIGNMENT OPERATORS -- */
 	//default constructor: create an empty, undirected graph
@@ -105,13 +78,11 @@ public: /* -- TRAVERSAL METHODS -- */
 	//performs Depth-first traversal (stack) on vertices
 	void DFS(const int startVert, const std::function<void(int, const T&)> &visit = [](int, T){}) const;
 
-	//Calculates Dijkstra's shortest-path-first algorithm from a starting vertex
+	//Calculates Dijkstra's shortest-path-first algorithm from a starting vertex to every other vertex in the graph
 	//parameters for Dijkstra visit function are as follows: VertexNumber, DistancefromStart, list PathToVertex
-	void Dijkstra(const int startVert, 
-		const std::function<void(int, const T&, int, std::list<std::pair<int, T>>)> &visit = [](int, const T&, int, std::list<std::pair<int,T>>){}) const;
+	void Dijkstra(const int startVert, const SPFVisitFunction &visit = [](int, const T&, int, std::list<std::pair<int,T>>){}) const;
 	//TODO: implement Dijkstra to call ShortestPath from startVert->endVert (so just do path between specified vertices)
-	void ShortestPath(const int startVert, const int endVert,
-		const std::function<void(int, const T&, int, std::list<std::pair<int, T>>)> &vist = [](int, const T&, int, std::list<std::pair<int, T>>){}) const;
+	std::list<std::pair<int, T>> ShortestPath(const int startVert, const int endVert) const;
 	//uses Dijkstra method to return a new graph containing a shortest path tree (returns as parameter)
 	void GetShortestPathTree(const int startVert, Graph &retGraph) const;
 	//Uses Prim's algorithm to find and return the minimum spanning tree graph. Returns by reference.
@@ -533,7 +504,7 @@ void Graph<T, U>::DFS(const int startVert, const std::function<void(int, const T
 }
 
 template<typename T, typename U>
-void Graph<T, U>::Dijkstra(const int startVert, const std::function<void(int, const T&, int, std::list<std::pair<int, T>>)> &visit) const
+void Graph<T, U>::Dijkstra(const int startVert, const SPFVisitFunction &visit) const
 {
 	if (startVert < 0 || startVert >= size || size == 0 || edgeCount == 0)
 		return;
@@ -589,5 +560,21 @@ void Graph<T, U>::Dijkstra(const int startVert, const std::function<void(int, co
 	delete[] dist;
 	delete[] spt;
 	delete[] pathList;
+}
+
+template<typename T, typename U>
+std::list<std::pair<int, T>> Graph<T, U>::ShortestPath(const int startVert, const int endVert) const
+{
+	std::list<std::pair<int, T>> ret;
+	this->Dijkstra(startVert,
+		[&](int vertex, const T& vertexValue, int totalDistance, std::list<std::pair<int, T>> path)
+		{
+			if (vertex == endVert)
+			{
+				ret = path;
+			}
+		});
+
+	return ret;
 }
 #endif
