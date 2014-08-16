@@ -13,6 +13,7 @@
 #include <queue>
 #include <stack>
 #include <list>
+#include <map>
 
 template<typename T, typename U>
 class Graph
@@ -81,8 +82,8 @@ public: /* -- TRAVERSAL METHODS -- */
 	//Calculates Dijkstra's shortest-path-first algorithm from a starting vertex to every other vertex in the graph
 	//parameters for Dijkstra visit function are as follows: VertexNumber, DistancefromStart, list PathToVertex
 	void Dijkstra(const int startVert, const SPFVisitFunction &visit = [](int, const T&, int, std::list<std::pair<int,T>>){}) const;
-	//TODO: implement Dijkstra to call ShortestPath from startVert->endVert (so just do path between specified vertices)
-	std::list<std::pair<int, T>> ShortestPath(const int startVert, const int endVert) const;
+	//A* search implementation. A* is an algorithm which, unlike Dijkstra's algorithm, solves single-pair rather than single-source
+	std::list<std::pair<int, T>> AStar(const int startVert, const int endVert) const;
 	//uses Dijkstra method to return a new graph containing a shortest path tree (returns as parameter)
 	void GetShortestPathTree(const int startVert, Graph &retGraph) const;
 	//Uses Prim's algorithm to find and return the minimum spanning tree graph. Returns by reference.
@@ -131,6 +132,8 @@ private:
 	//helper function for the dfs traversal: recursively called
 	void dfsHelper(const int startVert, bool * const visited, const std::function<void(int, const T&)> &visit) const;
 
+	//helper function to reconstruct the path for the return value of A*
+	std::list<std::pair<int, T>> reconstruct_path(const std::map<int, int> &came_from, int vert) const;
 };
 
 //definition of static factory function
@@ -563,18 +566,79 @@ void Graph<T, U>::Dijkstra(const int startVert, const SPFVisitFunction &visit) c
 }
 
 template<typename T, typename U>
-std::list<std::pair<int, T>> Graph<T, U>::ShortestPath(const int startVert, const int endVert) const
+std::list<std::pair<int, T>> Graph<T, U>::reconstruct_path(const std::map<int, int> &came_from, int curVert) const
 {
-	std::list<std::pair<int, T>> ret;
-	this->Dijkstra(startVert,
-		[&](int vertex, const T& vertexValue, int totalDistance, std::list<std::pair<int, T>> path)
-		{
-			if (vertex == endVert)
-			{
-				ret = path;
-			}
-		});
+	auto path = std::list<std::pair<int, T>>();
+	//reconstruct path following this pseudo-code:
+	/*
+	function reconstruct_path(came_from, current_node)
+		if current_node in came_from
+			p : = reconstruct_path(came_from, came_from[current_node])
+			return (p + current_node)
+		else
+			return current_node
+			*/
+	//path.push_back(std::pair<int, T>(startVert, vertValues[startVert]));
+	return path;
+}
 
-	return ret;
+template<typename T, typename U>
+std::list<std::pair<int, T>> Graph<T, U>::AStar(const int startVert, const int endVert) const
+{
+	//this follows the implementation provided on the page http://en.wikipedia.org/wiki/A*_search_algorithm
+
+	//the set of nodes already evaluated
+	bool * closedSet = new bool[size];
+	memset(closedSet, false, sizeof(bool)* size);
+	
+	//the set of nodes to be evaluated
+	//(default less function will sort on first int value of pair, which is used to represent priority)
+	std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>> openset;
+	openset.push(std::pair<int, int>(size - 1, startVert));
+
+	//helper array providing a method of tracking whether or not a vertex is in openset
+	bool *inOpenSet = new bool[size];
+	memset(inOpenSet, false, sizeof(bool)*size);
+	inOpenSet[startVert] = true;
+
+	int * g_score = new int[size];
+	memset(g_score, 0, sizeof(int)*size);
+
+	std::map<int, int> came_from;
+
+	while (!openset.empty())
+	{
+		//next vertex is the top of the priority queue
+		int nextVert = openset.top().second;
+		openset.pop();
+		inOpenSet[nextVert] = false;
+		if (nextVert == endVert)
+			break;
+
+		for (int i = 0; i < size; ++i)
+		{
+			if (adjList[nextVert][i].distance && closedSet[i])
+				continue;
+
+			int heuristic_cost = adjList[nextVert][i].distance;
+			int tentative_g_score = g_score[nextVert] + heuristic_cost;
+			if (!inOpenSet[i] || tentative_g_score < g_score[i])
+			{
+				came_from[i] = nextVert;
+				g_score[i] = tentative_g_score;
+
+				if (!inOpenSet[i])
+				{
+					openset.push(std::pair<int, int>(g_score[i] + heuristic_cost, i));
+					inOpenSet[i] = true;
+				}
+			}
+		}
+	}
+
+	delete[] closedSet;
+	delete[] g_score;
+
+	return reconstruct_path(came_from, endVert);
 }
 #endif

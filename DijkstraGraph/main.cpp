@@ -137,8 +137,8 @@ int main(int c, char * argv[])
 		cout << endl << endl; //spacing between calls to g->Dijkstra
 	}
 
-	list<pair<int, char>> fiveToThree = test->ShortestPath(5, 3);
-	list<pair<int, char>>::iterator iter = fiveToThree.begin();
+	auto fiveToThree = test->AStar(5, 3);
+	auto iter = fiveToThree.begin();
 	while (iter != fiveToThree.end())
 	{
 		cout << iter->first << "(" << iter->second << ")";
