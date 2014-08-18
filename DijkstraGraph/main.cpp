@@ -102,18 +102,18 @@ int main(int c, char * argv[])
 	g4 = g;
 	g4.RemoveAllEdges();
 	
-	Graph<char, int> * test = Graph<char, int>::CreateFromArray<GRAPH_SIZE>(slides);
-	for (int i = 0; i < test->NumVerts(); ++i)
+	Graph<char, int> test = Graph<char, int>::CreateFromArray<GRAPH_SIZE>(slides);
+	for (int i = 0; i < test.NumVerts(); ++i)
 	{
-		test->AddVertexValue(i, slideVertVals[i]);
+		test.AddVertexValue(i, slideVertVals[i]);
 	}
 
 
-	for (int i = 0; i < test->NumVerts(); ++i)
+	for (int i = 0; i < test.NumVerts(); ++i)
 	{ //run Dijkstra's algorithm from every starting vertex
 		cout << "Running Dijkstra's algorithm starting from: " << i << endl;
 		cout << left << setw(8) << "Vertex" << setw(10) << "Distance" << "Path" << endl;
-		test->Dijkstra(i, [](int vert, const int &value, int dist, list<pair<int,char>> pathInfo) //lambda expression for visit function
+		test.Dijkstra(i, [](int vert, const int &value, int dist, list<pair<int,char>> pathInfo) //lambda expression for visit function
 		{
 			//put the vertex and the value into a string to print out
 			char turd[10];
@@ -137,7 +137,7 @@ int main(int c, char * argv[])
 		cout << endl << endl; //spacing between calls to g->Dijkstra
 	}
 
-	auto fiveToThree = test->AStar(5, 3);
+	auto fiveToThree = test.AStar(5, 3);
 	auto iter = fiveToThree.begin();
 	while (iter != fiveToThree.end())
 	{
@@ -147,8 +147,6 @@ int main(int c, char * argv[])
 		else
 			cout << "-->";
 	}
-
-	delete test;
 
 	return 0;
 }

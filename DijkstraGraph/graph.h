@@ -28,7 +28,7 @@ public:
 	//	method and we keep the class looking cleaner. It also provides a more verbose construction
 	//	technique when creating graphs from adjacency matrices.
 	template<int vertCount>
-	static Graph* CreateFromArray(const int vertData[vertCount][vertCount]);
+	static Graph CreateFromArray(const int vertData[vertCount][vertCount]);
 
 public: //typedefs for visit functions
 	typedef std::function<void(int, const T&, int, std::list<std::pair<int, T>>)> SPFVisitFunction;
@@ -41,10 +41,18 @@ public: /* -- CONSTRUCTORS/DESTRUCTORS/ASSIGNMENT OPERATORS -- */
 	Graph(int numVerts, bool directed = false);
 	//copy from other graph
 	Graph(const Graph& rhs);
+	//move constructor
+	Graph(Graph && rhs)
+		: vertValues(rhs.vertValues), adjList(rhs.adjList), size(rhs.size), edgeCount(rhs.edgeCount), directed(rhs.directed)
+	{
+		rhs.vertValues = nullptr;
+		rhs.adjList = nullptr;
+	}
 	//assignment operator (copy from right hand side)
 	Graph& operator=(const Graph &rhs);
+	//move assignment operator
+	Graph& operator=(Graph && rhs);
 	~Graph(); //clean up memory
-
 public: /* -- MODIFIER METHODS -- */
 	//Adds a vertex to the graph (resizes internal array container). Returns the new vertex number.
 	int AddVertex(const T * const value = NULL);
@@ -129,26 +137,27 @@ private:
 	int size, edgeCount; //size is number of vertices, edgeCount is number of edges
 	bool directed; //flag for whether or not the graph is directed; important only when AddEdge/RemoveEdge are called
 
-	//helper function for the dfs traversal: recursively called
+//helper functions
+private:
+	//for dfs traversal, called recursively
 	void dfsHelper(const int startVert, bool * const visited, const std::function<void(int, const T&)> &visit) const;
-
-	//helper function to reconstruct the path for the return value of A*
+	//reconstruct the path for the return value of A*
 	std::list<std::pair<int, T>> reconstruct_path(const std::map<int, int> &came_from, int vert) const;
 };
 
 //definition of static factory function
 template<typename T, typename U>
 template<int vertCount>
-static Graph<T, U>* Graph<T, U>::CreateFromArray(const int vertData[vertCount][vertCount])
+static Graph<T, U> Graph<T, U>::CreateFromArray(const int vertData[vertCount][vertCount])
 {
-	Graph<T, U> * ret = new Graph<T, U>(vertCount);
+	Graph<T, U> ret(vertCount); //= new Graph<T, U>(vertCount);
 	for (int i = 0; i < vertCount; ++i)
 	{
 		//we only need to diagonally fill half the array, since the graph is undirected
 		//	it will automatically add edge B,A when edge A,B is created
 		for (int j = i; j < vertCount; ++j)
 		{
-			ret->AddEdge(i, j, vertData[i][j]);
+			ret.AddEdge(i, j, vertData[i][j]);
 		}
 	}
 	return ret;
@@ -244,6 +253,23 @@ Graph<T, U>& Graph<T, U>::operator=(const Graph<T, U> &rhs)
 		adjList = NULL;
 		vertValues = NULL;
 	}
+
+	return *this;
+}
+
+template<typename T, typename U>
+Graph<T, U>& Graph<T, U>::operator=(Graph<T, U>&& rhs)
+{
+	if (this == &rhs)
+		return *this;
+
+	vertValues = rhs.vertValues;
+	adjList = rhs.adjList;
+	size = rhs.size;
+	edgeCount = rhs.edgeCount;
+	directed = rhs.directed;
+	rhs.vertValues = nullptr;
+	rhs.directed = nullptr;
 
 	return *this;
 }
