@@ -32,11 +32,11 @@ public:
 
 public: //typedefs for visit functions
 	typedef std::function<void(int, const T&, int, std::list<std::pair<int, T>>)> SPFVisitFunction;
-	typedef std::function<void(int, int)> TraversalFunction;
+	typedef std::function<void(int, const T&)> TraversalFunction;
 
 public: /* -- CONSTRUCTORS/DESTRUCTORS/ASSIGNMENT OPERATORS -- */
 	//default constructor: create an empty, undirected graph
-	Graph() : size(0), edgeCount(0), directed(false), adjList(NULL), vertValues(NULL) { }
+	Graph() : size(0), edgeCount(0), directed(false), adjList(nullptr), vertValues(nullptr) { }
 	//creates a graph with the specified number of vertices but no edges
 	Graph(int numVerts, bool directed = false);
 	//copy from other graph
@@ -55,7 +55,7 @@ public: /* -- CONSTRUCTORS/DESTRUCTORS/ASSIGNMENT OPERATORS -- */
 	~Graph(); //clean up memory
 public: /* -- MODIFIER METHODS -- */
 	//Adds a vertex to the graph (resizes internal array container). Returns the new vertex number.
-	int AddVertex(const T * const value = NULL);
+	int AddVertex(const T * const value = nullptr);
 	//removes a vertex (resizes array) and any edges referencing it.
 	void RemoveVertex(int vertex);
 	//removes the first vertex (resizes array) with the value specified
@@ -83,19 +83,19 @@ public: /* -- TRAVERSAL METHODS -- */
 	//The visit function is called on the vertex when the vertex is visited by the algorithm
 
 	//performs Breadth-first traversal (queue) on vertices
-	void BFS(const int startVert, const std::function<void(int, const T&)> &visit = [](int, T){}) const;
+	void BFS(const int startVert, const TraversalFunction &visit = [](int, T){}) const;
 	//performs Depth-first traversal (stack) on vertices
-	void DFS(const int startVert, const std::function<void(int, const T&)> &visit = [](int, T){}) const;
+	void DFS(const int startVert, const TraversalFunction &visit = [](int, T){}) const;
 
 	//Calculates Dijkstra's shortest-path-first algorithm from a starting vertex to every other vertex in the graph
 	//parameters for Dijkstra visit function are as follows: VertexNumber, DistancefromStart, list PathToVertex
 	void Dijkstra(const int startVert, const SPFVisitFunction &visit = [](int, const T&, int, std::list<std::pair<int,T>>){}) const;
 	//A* search implementation. A* is an algorithm which, unlike Dijkstra's algorithm, solves single-pair rather than single-source
 	std::list<std::pair<int, T>> AStar(const int startVert, const int endVert) const;
-	//uses Dijkstra method to return a new graph containing a shortest path tree (returns as parameter)
-	void GetShortestPathTree(const int startVert, Graph &retGraph) const;
-	//Uses Prim's algorithm to find and return the minimum spanning tree graph. Returns by reference.
-	void GetMinimumSpanningTree(Graph &retGraph) const;
+	//uses Dijkstra method to return a new graph containing a shortest path tree.
+	Graph GetShortestPathTree(const int startVert) const;
+	//Uses Prim's algorithm to find and return the minimum spanning tree graph.
+	Graph GetMinimumSpanningTree() const;
 	
 public: /* -- OTHER OPERATORS -- */
 	//the << operator overload does a lot of fancy stuff formatting wise
@@ -140,7 +140,7 @@ private:
 //helper functions
 private:
 	//for dfs traversal, called recursively
-	void dfsHelper(const int startVert, bool * const visited, const std::function<void(int, const T&)> &visit) const;
+	void dfsHelper(const int startVert, bool * const visited, const TraversalFunction &visit) const;
 	//reconstruct the path for the return value of A*
 	std::list<std::pair<int, T>> reconstruct_path(const std::map<int, int> &came_from, int vert) const;
 };
@@ -184,8 +184,8 @@ Graph<T, U>::Graph(int numVerts, bool directed)
 	}
 	else
 	{
-		adjList = NULL;
-		vertValues = NULL;
+		adjList = nullptr;
+		vertValues = nullptr;
 	}
 }
 
@@ -209,8 +209,8 @@ Graph<T, U>::Graph(const Graph<T, U> &rhs)
 	}
 	else
 	{
-		adjList = NULL;
-		vertValues = NULL;
+		adjList = nullptr;
+		vertValues = nullptr;
 	}
 }
 
@@ -220,17 +220,17 @@ Graph<T, U>& Graph<T, U>::operator=(const Graph<T, U> &rhs)
 	if (&rhs == this)
 		return *this;
 
-	if (adjList != NULL)
+	if (adjList != nullptr)
 	{ //clear out this graph if there is data
 		for (int i = 0; i < size; ++i)
 			delete[] adjList[i];
 		delete[] adjList;
-		adjList = NULL;
+		adjList = nullptr;
 	}
-	if (vertValues != NULL)
+	if (vertValues != nullptr)
 	{
 		delete[]vertValues;
-		vertValues = NULL;
+		vertValues = nullptr;
 	}
 
 	edgeCount = rhs.NumEdges();
@@ -250,8 +250,8 @@ Graph<T, U>& Graph<T, U>::operator=(const Graph<T, U> &rhs)
 	}
 	else
 	{
-		adjList = NULL;
-		vertValues = NULL;
+		adjList = nullptr;
+		vertValues = nullptr;
 	}
 
 	return *this;
@@ -262,6 +262,19 @@ Graph<T, U>& Graph<T, U>::operator=(Graph<T, U>&& rhs)
 {
 	if (this == &rhs)
 		return *this;
+
+	if (adjList != nullptr)
+	{ //clear out this graph if there is data
+		for (int i = 0; i < size; ++i)
+			delete[] adjList[i];
+		delete[] adjList;
+		adjList = nullptr;
+	}
+	if (vertValues != nullptr)
+	{
+		delete[]vertValues;
+		vertValues = nullptr;
+	}
 
 	vertValues = rhs.vertValues;
 	adjList = rhs.adjList;
@@ -277,31 +290,31 @@ Graph<T, U>& Graph<T, U>::operator=(Graph<T, U>&& rhs)
 template<typename T, typename U>
 Graph<T, U>::~Graph()
 {
-	if (adjList != NULL)
+	if (adjList != nullptr)
 	{
 		for (int i = 0; i < size; ++i)
 		{
 			//free each row
 			delete[] adjList[i];
-			adjList[i] = NULL;
+			adjList[i] = nullptr;
 		}
 		//free the whole thing
 		delete[] adjList;
-		adjList = NULL;
+		adjList = nullptr;
 	}
 
-	if (vertValues != NULL)
+	if (vertValues != nullptr)
 	{
 		delete[] vertValues;
-		vertValues = NULL;
+		vertValues = nullptr;
 	}
 }
 
 template<typename T, typename U>
 int Graph<T, U>::AddVertex(const T * const value)
 {
-	edge ** oldAdjList = NULL;
-	T * oldVertValues = NULL;
+	edge ** oldAdjList = nullptr;
+	T * oldVertValues = nullptr;
 
 	if (size > 0)
 	{//pointers to old data
@@ -318,26 +331,26 @@ int Graph<T, U>::AddVertex(const T * const value)
 		memset(adjList[i], 0, sizeof(edge)* size); //set to 0
 	}
 
-	if (oldAdjList != NULL)
+	if (oldAdjList != nullptr)
 	{
 		for (int i = 0; i < size - 1; ++i)
 		{
 			memcpy(adjList[i], oldAdjList[i], sizeof(edge)* (size - 1)); //copy the memory over
 			delete[] oldAdjList[i]; //delete the old memory
-			oldAdjList[i] = NULL;
+			oldAdjList[i] = nullptr;
 		}
 		delete[] oldAdjList; //free the whole of the old memory
-		oldAdjList = NULL;
+		oldAdjList = nullptr;
 	}
 
-	if (oldVertValues != NULL)
+	if (oldVertValues != nullptr)
 	{
 		memcpy(vertValues, oldVertValues, sizeof(T)* (size - 1));
 		delete[] oldVertValues;
-		oldVertValues = NULL;
+		oldVertValues = nullptr;
 	}
 
-	if (value != NULL)
+	if (value != nullptr)
 	{
 		vertValues[size - 1] = *value;
 	}
@@ -368,7 +381,7 @@ void Graph<T, U>::RemoveVertex(int vertex)
 			if (src == vertex)
 			{//skip source row, but still copy over for this iteration (for dest)
 				delete[]oldData[src];
-				oldData[src] = NULL;
+				oldData[src] = nullptr;
 				src++;
 			}
 			adjList[dst] = new edge[size];
@@ -385,20 +398,20 @@ void Graph<T, U>::RemoveVertex(int vertex)
 				adjList[dst][row - off] = oldData[src][row];
 			}
 			delete[] oldData[src];
-			oldData[src] = NULL;
+			oldData[src] = nullptr;
 
 			vertValues[dst] = T(oldVertValues[src]);
 		}
 		delete[] oldVertValues;
-		oldVertValues = NULL;
+		oldVertValues = nullptr;
 	}
 	else
 	{ //if we're deleting the last vertex things are very easy
 		delete[] adjList[0];
 		delete[] adjList;
 		delete[] vertValues;
-		adjList = NULL;
-		vertValues = NULL;
+		adjList = nullptr;
+		vertValues = nullptr;
 	}
 }
 
@@ -434,7 +447,7 @@ void Graph<T, U>::AddEdge(int vertexA, int vertexB, int distance, const U * cons
 
 	edge newEdge;
 	newEdge.distance = distance;
-	if (value != NULL)
+	if (value != nullptr)
 		newEdge.value = *value;
 
 	adjList[vertexA][vertexB] = newEdge;
@@ -477,7 +490,7 @@ void Graph<T, U>::AddEdgeValue(int vertAIndex, int vertBIndex, const U& value)
 }
 
 template<typename T, typename U>
-void Graph<T, U>::BFS(const int startVert, const std::function<void(int, const T&)> &visit) const
+void Graph<T, U>::BFS(const int startVert, const TraversalFunction &visit) const
 { //BFS traversal algorithm as described in slides
 	if (startVert < 0 || startVert >= size || size == 0 || edgeCount == 0)
 		return;
@@ -508,7 +521,7 @@ void Graph<T, U>::BFS(const int startVert, const std::function<void(int, const T
 }
 
 template<typename T, typename U>
-void Graph<T, U>::dfsHelper(const int startVert, bool * const visited, const std::function<void(int, const T&)> &visit) const
+void Graph<T, U>::dfsHelper(const int startVert, bool * const visited, const TraversalFunction &visit) const
 {
 	visited[startVert] = true;
 	visit(startVert, vertValues[startVert]);
@@ -521,7 +534,7 @@ void Graph<T, U>::dfsHelper(const int startVert, bool * const visited, const std
 }
 
 template<typename T, typename U>
-void Graph<T, U>::DFS(const int startVert, const std::function<void(int, const T&)> &visit) const
+void Graph<T, U>::DFS(const int startVert, const TraversalFunction &visit) const
 { //DFS traversal implemented as discussed in class
 	if (startVert < 0 || startVert >= size || size == 0 || edgeCount == 0)
 		return;
